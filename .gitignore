@@ -1,19 +1,47 @@
-# OpenTofu state files
+# OpenTofu / Terraform provider cache — never commit cached binaries
 **/.terraform/
+
+# State files — stored in S3 backend, never commit locally
 *.tfstate
 *.tfstate.backup
 *.tfstate.*.backup
-.terraform.lock.hcl
 
-# Plan outputs
+# NOTE: .terraform.lock.hcl IS committed — it pins provider versions
+# (equivalent to pnpm-lock.yaml). Do NOT add it here.
+
+# Plan output binaries — contain serialised secrets, never commit
 *.tfplan
 tfplan
 
-# Sensitive var files
+# Sensitive var files — use *.tfvars.example for safe templates
 *.tfvars
 !*.tfvars.example
 
+# Partial backend config files (may contain credentials)
+*.tfbackend
+
+# Local override files — developer-only, never shared
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# OpenTofu / Terraform crash logs
+crash.log
+crash.*.log
+
+# CLI config files (contain tokens / credentials)
+.terraformrc
+.terraform.rc
+
+# Logs
+*.log
+logs/
+.agent-logs/
+
 # OS / editor
 .DS_Store
+Thumbs.db
 .idea/
+.vscode/settings.json
 *.swp
