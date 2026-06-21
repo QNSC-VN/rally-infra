@@ -42,7 +42,7 @@ jobs:
           MODULES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
             | grep '^modules/' | wc -l)
           if [ "$MODULES_CHANGED" -gt 0 ]; then
-            CHANGED='["live/_shared","live/staging","live/prod"]'
+            CHANGED='["live/_shared","live/develop","live/prod"]'
           fi
           echo "workspaces=$CHANGED" >> $GITHUB_OUTPUT
 

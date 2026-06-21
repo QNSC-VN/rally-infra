@@ -18,4 +18,9 @@ variable "environments" {
   }))
   description = "Map of environment name → OIDC subject constraints"
 }
+variable "infra_repo_name" {
+  type        = string
+  default     = "rally-infra"
+  description = "GitHub repo name for the infra repo (used to scope plan/apply OIDC roles)"
+}
 variable "tags" { type = map(string); default = {} }

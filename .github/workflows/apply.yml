@@ -45,12 +45,12 @@ jobs:
         run: tofu apply -input=false -auto-approve
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Staging — auto-approve on every push to main
+  # Develop — auto-approve on every push to main
   # ─────────────────────────────────────────────────────────────────────────────
-  apply-staging:
+  apply-develop:
     needs: apply-shared
     runs-on: ubuntu-latest
-    environment: staging   # no approval gate needed
+    environment: develop   # no approval gate
 
     steps:
       - uses: actions/checkout@v4
@@ -65,20 +65,20 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: tofu init
-        working-directory: live/staging
+        working-directory: live/develop
         run: tofu init -input=false
 
       - name: tofu apply
-        working-directory: live/staging
+        working-directory: live/develop
         run: tofu apply -input=false -auto-approve
         env:
-          TF_VAR_acm_cert_arn: ${{ secrets.ACM_CERT_ARN_STAGING }}
+          TF_VAR_acm_cert_arn: ${{ secrets.ACM_CERT_ARN_DEVELOP }}
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Production — requires manual approval via GitHub Environment
   # ─────────────────────────────────────────────────────────────────────────────
   apply-prod:
-    needs: apply-staging
+    needs: apply-develop
     runs-on: ubuntu-latest
     environment: production   # ← configure approval reviewers in GitHub Settings
 

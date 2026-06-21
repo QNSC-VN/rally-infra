@@ -45,7 +45,7 @@ module "iam_oidc" {
   create_oidc_provider  = true   # set false after first apply
 
   environments = {
-    staging = {
+    develop = {
       allowed_subjects = [
         "repo:${local.github_org}/rally-api:ref:refs/heads/main"
       ]

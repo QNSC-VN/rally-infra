@@ -174,3 +174,68 @@ resource "aws_iam_role_policy" "ecr_push" {
     ]
   })
 }
+
+# ── Infra CI roles (rally-infra repo) ─────────────────────────────────────────
+locals {
+  infra_subject_base = "repo:${var.github_org}/${var.infra_repo_name}"
+}
+
+# Read-only plan role — used by plan.yml on PRs
+resource "aws_iam_role" "infra_plan" {
+  name        = "rally-github-infra-plan"
+  description = "Assumed by GitHub Actions to run tofu plan on rally-infra PRs"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = local.oidc_provider_arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "${local.infra_subject_base}:*"
+        }
+      }
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "infra_plan_readonly" {
+  role       = aws_iam_role.infra_plan.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+# Apply role — used by apply.yml on push to main (broad permissions, protected by branch rules)
+resource "aws_iam_role" "infra_apply" {
+  name        = "rally-github-infra-apply"
+  description = "Assumed by GitHub Actions to run tofu apply on rally-infra main branch"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = local.oidc_provider_arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          # Restrict to main branch only
+          "token.actions.githubusercontent.com:sub" = "${local.infra_subject_base}:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "infra_apply_admin" {
+  role       = aws_iam_role.infra_apply.name
+  # Start with AdministratorAccess; tighten after initial apply
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}

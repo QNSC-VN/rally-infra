@@ -5,7 +5,7 @@ terraform {
 
   backend "s3" {
     bucket         = "rally-tofu-state"
-    key            = "staging/terraform.tfstate"
+    key            = "develop/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
     dynamodb_table = "rally-tofu-locks"
@@ -17,22 +17,22 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "rally"
-      Environment = "staging"
+      Environment = "develop"
       ManagedBy   = "opentofu"
     }
   }
 }
 
 locals {
-  env    = "staging"
-  name   = "rally-staging"
+  env    = "develop"
+  name   = "rally-develop"
   region = "ap-southeast-1"
   azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
 
   # Read shared outputs (ECR URLs + deploy role ARNs)
   # Set after first `tofu apply` of live/_shared
-  ecr_api_url      = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-api:latest"
-  ecr_worker_url   = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-worker:latest"
+  ecr_api_url    = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-api:latest"
+  ecr_worker_url = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-worker:latest"
 }
 
 # ── Networking ────────────────────────────────────────────────────────────────
@@ -47,6 +47,7 @@ module "network" {
   public_subnet_cidrs  = ["10.10.0.0/24", "10.10.1.0/24", "10.10.2.0/24"]
   private_subnet_cidrs = ["10.10.10.0/24", "10.10.11.0/24", "10.10.12.0/24"]
   data_subnet_cidrs    = ["10.10.20.0/24", "10.10.21.0/24", "10.10.22.0/24"]
+
 
   multi_az_nat = false   # single NAT in staging (cost optimisation)
   app_port     = 3000
