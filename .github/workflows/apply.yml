@@ -1,0 +1,105 @@
+name: OpenTofu Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "live/**"
+      - "modules/**"
+      - ".github/workflows/apply.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TOFU_VERSION: "1.9.1"
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Shared (ECR + OIDC) — runs only when _shared/ or modules/ changed
+  # ─────────────────────────────────────────────────────────────────────────────
+  apply-shared:
+    runs-on: ubuntu-latest
+    environment: shared
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with: { tofu_version: "${{ env.TOFU_VERSION }}" }
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/rally-github-infra-apply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: tofu init
+        working-directory: live/_shared
+        run: tofu init -input=false
+
+      - name: tofu apply
+        working-directory: live/_shared
+        run: tofu apply -input=false -auto-approve
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Staging — auto-approve on every push to main
+  # ─────────────────────────────────────────────────────────────────────────────
+  apply-staging:
+    needs: apply-shared
+    runs-on: ubuntu-latest
+    environment: staging   # no approval gate needed
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with: { tofu_version: "${{ env.TOFU_VERSION }}" }
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/rally-github-infra-apply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: tofu init
+        working-directory: live/staging
+        run: tofu init -input=false
+
+      - name: tofu apply
+        working-directory: live/staging
+        run: tofu apply -input=false -auto-approve
+        env:
+          TF_VAR_acm_cert_arn: ${{ secrets.ACM_CERT_ARN_STAGING }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Production — requires manual approval via GitHub Environment
+  # ─────────────────────────────────────────────────────────────────────────────
+  apply-prod:
+    needs: apply-staging
+    runs-on: ubuntu-latest
+    environment: production   # ← configure approval reviewers in GitHub Settings
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with: { tofu_version: "${{ env.TOFU_VERSION }}" }
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/rally-github-infra-apply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: tofu init
+        working-directory: live/prod
+        run: tofu init -input=false
+
+      - name: tofu apply
+        working-directory: live/prod
+        run: tofu apply -input=false -auto-approve
+        env:
+          TF_VAR_acm_cert_arn: ${{ secrets.ACM_CERT_ARN_PROD }}

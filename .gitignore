@@ -1,0 +1,19 @@
+# OpenTofu state files
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+.terraform.lock.hcl
+
+# Plan outputs
+*.tfplan
+tfplan
+
+# Sensitive var files
+*.tfvars
+!*.tfvars.example
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp

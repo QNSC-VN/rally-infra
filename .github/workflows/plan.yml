@@ -1,0 +1,114 @@
+name: OpenTofu Plan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "live/**"
+      - "modules/**"
+      - ".github/workflows/plan.yml"
+
+permissions:
+  id-token: write      # OIDC
+  contents: read
+  pull-requests: write # post plan comment
+
+env:
+  TOFU_VERSION: "1.9.1"
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Detect which live/ directories changed so we only plan those
+  # ─────────────────────────────────────────────────────────────────────────────
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      workspaces: ${{ steps.set.outputs.workspaces }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - id: set
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^live/' \
+            | sed 's|/.*||' \
+            | sort -u \
+            | grep -v '^live$' \
+            | jq -Rc '[.,inputs]' \
+            | jq -sc 'add // []')
+          # Always include all workspaces if modules/ changed
+          MODULES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^modules/' | wc -l)
+          if [ "$MODULES_CHANGED" -gt 0 ]; then
+            CHANGED='["live/_shared","live/staging","live/prod"]'
+          fi
+          echo "workspaces=$CHANGED" >> $GITHUB_OUTPUT
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Plan each workspace
+  # ─────────────────────────────────────────────────────────────────────────────
+  plan:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.workspaces != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJson(needs.detect-changes.outputs.workspaces) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/rally-github-infra-plan
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: tofu init
+        working-directory: ${{ matrix.workspace }}
+        run: tofu init -input=false
+
+      - name: tofu validate
+        working-directory: ${{ matrix.workspace }}
+        run: tofu validate
+
+      - name: tofu plan
+        id: plan
+        working-directory: ${{ matrix.workspace }}
+        run: |
+          tofu plan -input=false -no-color -out=tfplan 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        env:
+          TF_VAR_acm_cert_arn: ${{ secrets.ACM_CERT_ARN }}
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ matrix.workspace }}/plan.txt', 'utf8');
+            const MAX = 65000;
+            const body = `### OpenTofu Plan — \`${{ matrix.workspace }}\`
+            \`\`\`hcl
+            ${plan.length > MAX ? plan.slice(0, MAX) + '\n... (truncated)' : plan}
+            \`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+      - name: Fail if plan errored
+        if: steps.plan.outputs.exitcode != '0' && steps.plan.outputs.exitcode != '2'
+        run: exit 1
