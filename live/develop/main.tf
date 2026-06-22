@@ -253,3 +253,19 @@ module "waf" {
 
   tags = { Environment = local.env }
 }
+
+# ── CDN (S3 + CloudFront) — rally-web SPA ─────────────────────────────────────
+# Prerequisites:
+#   1. Create an ACM cert for the web domain in us-east-1 (CloudFront requirement)
+#   2. Pass its ARN as web_acm_cert_arn in your tfvars
+#   3. After apply: set S3_BUCKET + CLOUDFRONT_ID as GitHub env vars for rally-web
+module "cdn" {
+  source = "../../modules/cdn"
+
+  name        = "rally-web-develop"
+  acm_cert_arn = var.web_acm_cert_arn
+  aliases     = []   # set to ["app-dev.rally.example.com"] once DNS is configured
+  price_class = "PriceClass_200"
+
+  tags = { Environment = local.env, Service = "web" }
+}

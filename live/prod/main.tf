@@ -258,3 +258,16 @@ module "waf" {
 
   tags = { Environment = local.env }
 }
+
+# ── CDN (S3 + CloudFront) — rally-web SPA ─────────────────────────────────────
+# PriceClass_All in prod — full global PoP coverage for enterprise users.
+module "cdn" {
+  source = "../../modules/cdn"
+
+  name         = "rally-web-prod"
+  acm_cert_arn = var.web_acm_cert_arn
+  aliases      = []   # set to ["app.rally.example.com"] once DNS is configured
+  price_class  = "PriceClass_All"
+
+  tags = { Environment = local.env, Service = "web" }
+}
