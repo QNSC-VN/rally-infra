@@ -1,0 +1,89 @@
+# =============================================================================
+# Maintenance — Stale PRs / Issues + Merged branch cleanup
+#
+# Stale PRs:  after 30 days of inactivity → labelled "stale"
+#             after 7 more days → closed as "withdrawn"
+# Stale branches: merged into main → deleted weekly
+# =============================================================================
+name: Maintenance - Cleanup Stale Work
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'   # every Monday 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1. Mark & close stale PRs / Issues
+  # ─────────────────────────────────────────────────────────────────────────
+  stale-prs:
+    name: Mark & close stale PRs
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          operations-per-run: 500
+          # PRs
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          stale-pr-label: 'stale'
+          stale-pr-message: >
+            This PR has had no activity for 30 days and is now considered stale.
+            It will be closed in 7 days unless there is further activity.
+            Add the `do-not-close` label to exempt it.
+          close-pr-label: 'withdrawn'
+          close-pr-message: 'Closed after 37 days of inactivity. Re-open if work resumes.'
+          exempt-pr-labels: 'do-not-close,wip,blocked'
+          # Issues
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-label: 'stale'
+          stale-issue-message: 'This issue has been inactive for 60 days.'
+          close-issue-label: 'inactive'
+          close-issue-message: 'Closed due to inactivity. Re-open if still relevant.'
+          exempt-issue-labels: 'do-not-close,pinned'
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2. Delete branches already merged into main
+  # ─────────────────────────────────────────────────────────────────────────
+  delete-merged-branches:
+    name: Delete merged branches
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete branches merged into main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch --prune origin
+
+          MERGED=$(git branch -r --merged origin/main \
+            | grep -v -E 'origin/(main|HEAD)' \
+            | sed 's|origin/||' \
+            | tr -d ' ')
+
+          if [ -z "$MERGED" ]; then
+            echo "✓ No merged branches to clean up."
+            exit 0
+          fi
+
+          echo "Branches to delete:"
+          echo "$MERGED"
+          echo "---"
+
+          for BRANCH in $MERGED; do
+            echo "Deleting: $BRANCH"
+            gh api "repos/${{ github.repository }}/git/refs/heads/$BRANCH" \
+              --method DELETE \
+              && echo "  ✓ deleted" \
+              || echo "  ✗ failed (may already be gone)"
+          done
