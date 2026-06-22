@@ -1,0 +1,11 @@
+# Default reviewers for all files
+*                                   @nghiavt1802/infra-team
+
+# Live environment configs — any environment change requires lead review
+live/                               @nghiavt1802/infra-leads
+
+# Shared modules — API surface changes affect all environments
+modules/                            @nghiavt1802/infra-leads
+
+# CI/CD workflows — pipeline changes require lead review
+.github/workflows/                  @nghiavt1802/infra-leads

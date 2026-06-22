@@ -1,0 +1,24 @@
+version: 2
+
+updates:
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  # Tofu provider versions are pinned in .tofu files and managed manually.
+  # Only Actions runners need automated dependency tracking.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    groups:
+      actions-updates:
+        patterns: ["*"]
+    labels:
+      - "ci"
+      - "automated"
+    commit-message:
+      prefix: "ci(deps)"
+    reviewers:
+      - nghiavt1802/infra-leads
