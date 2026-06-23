@@ -4,13 +4,11 @@ terraform {
   }
 
   backend "s3" {
-    # Shared state: ECR repos + OIDC roles — created once per AWS account
-    # Override via -backend-config on first `tofu init`
-    bucket         = "rally-tofu-state"
-    key            = "shared/terraform.tfstate"
+    bucket         = "qncs-tofu-state"
+    key            = "rally/shared/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    dynamodb_table = "rally-tofu-locks"
+    dynamodb_table = "qncs-tofu-locks"
   }
 }
 
@@ -31,6 +29,16 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
+# ── Platform remote state (OIDC provider ARN from qncs-infra) ─────────────────
+data "terraform_remote_state" "platform" {
+  backend = "s3"
+  config = {
+    bucket = "qncs-tofu-state"
+    key    = "platform/bootstrap/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+}
+
 # ── ECR Repositories ──────────────────────────────────────────────────────────
 module "ecr" {
   source = "../../modules/ecr"
@@ -44,7 +52,8 @@ module "iam_oidc" {
   source = "../../modules/iam-oidc"
 
   github_org            = local.github_org
-  create_oidc_provider  = true   # set false after first apply
+  create_oidc_provider       = false
+  existing_oidc_provider_arn = data.terraform_remote_state.platform.outputs.oidc_provider_arn
 
   environments = {
     develop = {

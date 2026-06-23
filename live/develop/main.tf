@@ -4,11 +4,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "rally-tofu-state"
-    key            = "develop/terraform.tfstate"
+    bucket         = "qncs-tofu-state"
+    key            = "rally/develop/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    dynamodb_table = "rally-tofu-locks"
+    dynamodb_table = "qncs-tofu-locks"
   }
 }
 
