@@ -12,6 +12,8 @@ on:
     - cron: '0 2 * * 1'   # every Monday 02:00 UTC
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
   # 1. Mark & close stale PRs / Issues
