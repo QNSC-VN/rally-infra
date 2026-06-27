@@ -21,4 +21,4 @@ updates:
     commit-message:
       prefix: "ci(deps)"
     reviewers:
-      - nghiavt1802/infra-leads
+      - QNSC-VN/infra-leads

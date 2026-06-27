@@ -1,7 +1,7 @@
 # live/_shared/terraform.tfvars.example
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy to terraform.tfvars (git-ignored) and fill in your values.
-# Prerequisite: qncs-infra bootstrap must have been applied first.
+# Prerequisite: qnsc-infra bootstrap must have been applied first.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Your GitHub organisation name or personal username (owner of rally-* repos)
