@@ -61,8 +61,10 @@ module "network" {
   private_subnet_cidrs = ["10.20.10.0/24", "10.20.11.0/24", "10.20.12.0/24"]
   data_subnet_cidrs    = ["10.20.20.0/24", "10.20.21.0/24", "10.20.22.0/24"]
 
-  multi_az_nat = true   # one NAT per AZ in prod for HA
-  app_port     = 3000
+  multi_az_nat            = true   # one NAT per AZ in prod for HA
+  app_port                = 3000
+  enable_flow_logs        = true
+  flow_log_retention_days = 90    # SOC 2 CC7.2 minimum
 
   tags = { Environment = local.env }
 }

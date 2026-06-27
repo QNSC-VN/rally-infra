@@ -65,8 +65,10 @@ module "network" {
   data_subnet_cidrs    = ["10.10.20.0/24", "10.10.21.0/24", "10.10.22.0/24"]
 
 
-  multi_az_nat = false   # single NAT in staging (cost optimisation)
-  app_port     = 3000
+  multi_az_nat             = false   # single NAT in staging (cost optimisation)
+  app_port                 = 3000
+  enable_flow_logs         = true
+  flow_log_retention_days  = 30
 
   tags = { Environment = local.env }
 }
@@ -316,7 +318,10 @@ resource "aws_s3_bucket_public_access_block" "attachments" {
 resource "aws_s3_bucket_server_side_encryption_configuration" "attachments" {
   bucket = aws_s3_bucket.attachments.id
   rule {
-    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = local.kms_key_arn
+    }
     bucket_key_enabled = true
   }
 }
@@ -368,8 +373,9 @@ module "waf" {
   source = "../../modules/waf"
 
   name                = local.name
+  enabled             = false   # WAF skipped in develop — saves $5+/month per WebACL; enabled in prod
   alb_arn             = aws_lb.this.arn
-  rate_limit_per_5min = 1000   # lower limit in staging
+  rate_limit_per_5min = 1000
 
   tags = { Environment = local.env }
 }
@@ -385,7 +391,7 @@ module "cdn" {
   name        = "rally-web-develop"
   acm_cert_arn = var.web_acm_cert_arn
   aliases     = []   # set to ["app-dev.rally.example.com"] once DNS is configured
-  price_class = "PriceClass_200"
+  price_class = "PriceClass_100"   # develop: US/EU PoPs only — cheaper than PriceClass_200
 
   tags = { Environment = local.env, Service = "web" }
 }

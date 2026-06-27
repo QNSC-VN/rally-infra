@@ -6,6 +6,7 @@ terraform {
 
 # ── WAF v2 WebACL ─────────────────────────────────────────────────────────────
 resource "aws_wafv2_web_acl" "this" {
+  count       = var.enabled ? 1 : 0
   name        = var.name
   description = "WAF ACL for Rally ALB"
   scope       = "REGIONAL"
@@ -87,13 +88,14 @@ resource "aws_wafv2_web_acl" "this" {
 
 # ── Associate with ALB ─────────────────────────────────────────────────────────
 resource "aws_wafv2_web_acl_association" "this" {
-  count        = var.alb_arn != "" ? 1 : 0
+  count        = var.enabled && var.alb_arn != "" ? 1 : 0
   resource_arn = var.alb_arn
-  web_acl_arn  = aws_wafv2_web_acl.this.arn
+  web_acl_arn  = aws_wafv2_web_acl.this[0].arn
 }
 
 # ── CloudWatch log group for WAF ──────────────────────────────────────────────
 resource "aws_cloudwatch_log_group" "waf" {
+  count = var.enabled ? 1 : 0
   # WAF requires the name to start with "aws-waf-logs-"
   name              = "aws-waf-logs-${var.name}"
   retention_in_days = var.log_retention_days
@@ -101,8 +103,9 @@ resource "aws_cloudwatch_log_group" "waf" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "this" {
-  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
-  resource_arn            = aws_wafv2_web_acl.this.arn
+  count                   = var.enabled ? 1 : 0
+  log_destination_configs = [aws_cloudwatch_log_group.waf[0].arn]
+  resource_arn            = aws_wafv2_web_acl.this[0].arn
 
   logging_filter {
     default_behavior = "KEEP"
