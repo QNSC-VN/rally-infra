@@ -23,4 +23,9 @@ variable "infra_repo_name" {
   default     = "rally-infra"
   description = "GitHub repo name for the infra repo (used to scope plan/apply OIDC roles)"
 }
+variable "app_repo_names" {
+  type        = list(string)
+  default     = ["rally-api", "rally-web"]
+  description = "GitHub repo names allowed to assume the ECR push role"
+}
 variable "tags" { type = map(string); default = {} }

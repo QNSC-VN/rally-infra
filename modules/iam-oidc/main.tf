@@ -136,7 +136,9 @@ resource "aws_iam_role" "ecr_push" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/*:*"
+            "token.actions.githubusercontent.com:sub" = [
+              for repo in var.app_repo_names : "repo:${var.github_org}/${repo}:*"
+            ]
           }
         }
       }
