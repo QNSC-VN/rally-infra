@@ -29,6 +29,15 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
+# ── Discover the GitHub OIDC provider provisioned by qncs-infra bootstrap ──────
+# One OIDC provider exists per AWS account (AWS hard limit).
+# qncs-infra/live/bootstrap owns creation; rally-infra must never create it.
+# Using a data source avoids state coupling to qncs-infra and fails loudly
+# if bootstrap has not been run first.
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+}
+
 # ── ECR Repositories ──────────────────────────────────────────────────────────
 module "ecr" {
   source = "../../modules/ecr"
@@ -42,8 +51,8 @@ module "iam_oidc" {
   source = "../../modules/iam-oidc"
 
   github_org                 = local.github_org
-  create_oidc_provider       = var.create_oidc_provider
-  existing_oidc_provider_arn = var.existing_oidc_provider_arn
+  create_oidc_provider       = false   # qncs-infra owns the provider — never recreate
+  existing_oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
 
   environments = {
     develop = {
