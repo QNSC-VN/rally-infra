@@ -29,11 +29,21 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
-# ── Discover the GitHub OIDC provider provisioned by qncs-infra bootstrap ──────
+# ── Read shared platform outputs from qncs-infra bootstrap ───────────────────
+# Gives us: kms_key_arn, artifacts_bucket_name, oidc_provider_arn
+# Dependency: qncs-infra/live/bootstrap must be applied before this stack.
+data "terraform_remote_state" "platform" {
+  backend = "s3"
+  config = {
+    bucket = "qncs-tofu-state"
+    key    = "platform/bootstrap/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+}
+
+# ── Discover the GitHub OIDC provider provisioned by qncs-infra bootstrap ────
 # One OIDC provider exists per AWS account (AWS hard limit).
 # qncs-infra/live/bootstrap owns creation; rally-infra must never create it.
-# Using a data source avoids state coupling to qncs-infra and fails loudly
-# if bootstrap has not been run first.
 data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 }

@@ -8,3 +8,5 @@ variable "data_subnet_cidrs"   { type = list(string) }
 variable "app_port"            { type = number; default = 3000 }
 variable "multi_az_nat"        { type = bool; default = false; description = "true = one NAT per AZ (prod); false = single NAT (staging/dev)" }
 variable "tags"                { type = map(string); default = {} }
+variable "enable_flow_logs"    { type = bool; default = true; description = "Enable VPC flow logs to CloudWatch (SOC 2 CC7.2 — network monitoring)" }
+variable "flow_log_retention_days" { type = number; default = 90; description = "CloudWatch log retention for VPC flow logs (90 days = SOC 2 minimum)" }

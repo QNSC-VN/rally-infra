@@ -25,11 +25,25 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
+# ── Read shared layer outputs (ECR URLs, KMS ARN, artifacts bucket) ───────────
+# _shared owns ECR repos and re-exports platform-level outputs from qncs-infra.
+# Dependency: rally-infra/_shared must be applied before this environment stack.
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket = "qncs-tofu-state"
+    key    = "rally/shared/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+}
+
 locals {
   env    = "develop"
   name   = "rally-develop"
   region = "ap-southeast-1"
   azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
+
+  kms_key_arn = data.terraform_remote_state.shared.outputs.kms_key_arn
 
   # ECR URLs derived from current AWS account — no hardcoded placeholder
   ecr_base       = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.region}.amazonaws.com"
@@ -59,9 +73,10 @@ module "network" {
 
 # ── Secrets (scaffolding only — fill values in Secrets Manager console) ───────
 module "secrets" {
-  source = "../../modules/secrets"
-  prefix = "rally/${local.env}"
-  tags   = { Environment = local.env }
+  source      = "../../modules/secrets"
+  prefix      = "rally/${local.env}"
+  kms_key_arn = local.kms_key_arn
+  tags        = { Environment = local.env }
 }
 
 # ── RDS PostgreSQL 17 ─────────────────────────────────────────────────────────
@@ -71,6 +86,7 @@ module "rds" {
   identifier        = local.name
   subnet_ids        = module.network.data_subnet_ids
   security_group_id = module.network.sg_rds_id
+  kms_key_arn       = local.kms_key_arn
 
   instance_class          = "db.t4g.medium"
   allocated_storage_gb    = 20

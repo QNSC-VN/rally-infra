@@ -23,14 +23,29 @@ provider "aws" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+# ── Read shared layer outputs (ECR URLs, KMS ARN, artifacts bucket) ─────────────
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket = "qncs-tofu-state"
+    key    = "rally/shared/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+}
+
 locals {
   env    = "production"
   name   = "rally-prod"
   region = "ap-southeast-1"
   azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
 
-  ecr_api_url    = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-api:latest"
-  ecr_worker_url = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-worker:latest"
+  kms_key_arn = data.terraform_remote_state.shared.outputs.kms_key_arn
+
+  ecr_base       = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.region}.amazonaws.com"
+  ecr_api_url    = "${local.ecr_base}/rally-api:latest"
+  ecr_worker_url = "${local.ecr_base}/rally-worker:latest"
 }
 
 # ── Networking ────────────────────────────────────────────────────────────────
@@ -54,10 +69,11 @@ module "network" {
 
 # ── Secrets ───────────────────────────────────────────────────────────────────
 module "secrets" {
-  source = "../../modules/secrets"
-  prefix = "rally/${local.env}"
+  source               = "../../modules/secrets"
+  prefix               = "rally/${local.env}"
+  kms_key_arn          = local.kms_key_arn
   recovery_window_days = 30   # longer recovery in production
-  tags   = { Environment = local.env }
+  tags                 = { Environment = local.env }
 }
 
 # ── RDS PostgreSQL 17 (Multi-AZ) ─────────────────────────────────────────────
@@ -67,6 +83,7 @@ module "rds" {
   identifier        = local.name
   subnet_ids        = module.network.data_subnet_ids
   security_group_id = module.network.sg_rds_id
+  kms_key_arn       = local.kms_key_arn
 
   instance_class           = "db.t4g.large"
   allocated_storage_gb     = 100
