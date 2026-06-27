@@ -28,4 +28,7 @@ variable "app_repo_names" {
   default     = ["rally-api", "rally-web"]
   description = "GitHub repo names allowed to assume the ECR push role"
 }
-variable "tags" { type = map(string); default = {} }
+variable "tags" {
+  type = map(string)
+  default = {}
+}

@@ -1,6 +1,15 @@
-variable "prefix"               { type = string; description = "Namespace prefix (e.g. rally/staging)" }
-variable "recovery_window_days" { type = number; default = 7 }
-variable "kms_key_arn"          { type = string; default = "" }
+variable "prefix" {
+  type = string
+  description = "Namespace prefix (e.g. rally/staging)"
+}
+variable "recovery_window_days" {
+  type = number
+  default = 7
+}
+variable "kms_key_arn" {
+  type = string
+  default = ""
+}
 
 variable "secret_names" {
   type        = map(string)
@@ -23,4 +32,7 @@ variable "ssm_parameters" {
   description = "Non-sensitive config to store in SSM Parameter Store"
 }
 
-variable "tags" { type = map(string); default = {} }
+variable "tags" {
+  type = map(string)
+  default = {}
+}
