@@ -24,20 +24,10 @@ provider "aws" {
 }
 
 locals {
-  github_org = "nghiavt1802"   # ← update to your actual GitHub org/username
+  github_org = var.github_org
 }
 
 data "aws_caller_identity" "current" {}
-
-# ── Platform remote state (OIDC provider ARN from qncs-infra) ─────────────────
-data "terraform_remote_state" "platform" {
-  backend = "s3"
-  config = {
-    bucket = "qncs-tofu-state"
-    key    = "platform/bootstrap/terraform.tfstate"
-    region = "ap-southeast-1"
-  }
-}
 
 # ── ECR Repositories ──────────────────────────────────────────────────────────
 module "ecr" {
@@ -51,9 +41,9 @@ module "ecr" {
 module "iam_oidc" {
   source = "../../modules/iam-oidc"
 
-  github_org            = local.github_org
-  create_oidc_provider       = false
-  existing_oidc_provider_arn = data.terraform_remote_state.platform.outputs.oidc_provider_arn
+  github_org                 = local.github_org
+  create_oidc_provider       = var.create_oidc_provider
+  existing_oidc_provider_arn = var.existing_oidc_provider_arn
 
   environments = {
     develop = {

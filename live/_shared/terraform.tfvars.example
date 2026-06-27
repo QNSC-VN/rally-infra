@@ -1,0 +1,16 @@
+# live/_shared/terraform.tfvars.example
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy to terraform.tfvars (git-ignored) and fill in your values.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Your GitHub organisation name or personal username (owner of rally-* repos)
+github_org = "your-github-org"
+
+# Set to true for the first deploy (creates the GitHub OIDC provider in your account).
+# After that you may leave it true — Terraform/OpenTofu will detect no change.
+# Set to false only if you share an OIDC provider with another project and want
+# to reuse it (supply existing_oidc_provider_arn in that case).
+create_oidc_provider = true
+
+# Leave empty when create_oidc_provider = true
+existing_oidc_provider_arn = ""

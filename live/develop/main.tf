@@ -23,16 +23,18 @@ provider "aws" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 locals {
   env    = "develop"
   name   = "rally-develop"
   region = "ap-southeast-1"
   azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
 
-  # Read shared outputs (ECR URLs + deploy role ARNs)
-  # Set after first `tofu apply` of live/_shared
-  ecr_api_url    = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-api:latest"
-  ecr_worker_url = "YOUR_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rally-worker:latest"
+  # ECR URLs derived from current AWS account — no hardcoded placeholder
+  ecr_base       = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.region}.amazonaws.com"
+  ecr_api_url    = "${local.ecr_base}/rally-api:latest"
+  ecr_worker_url = "${local.ecr_base}/rally-worker:latest"
 }
 
 # ── Networking ────────────────────────────────────────────────────────────────

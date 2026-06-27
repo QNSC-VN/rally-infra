@@ -1,0 +1,14 @@
+# live/develop/terraform.tfvars.example
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy to terraform.tfvars (git-ignored) and fill in your values.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ACM certificate for the ALB HTTPS listener — must be in ap-southeast-1
+# Request via: aws acm request-certificate --region ap-southeast-1 \
+#   --domain-name api-dev.yourdomain.com --validation-method DNS
+acm_cert_arn = "arn:aws:acm:ap-southeast-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# ACM certificate for CloudFront — MUST be in us-east-1 (global CloudFront requirement)
+# Request via: aws acm request-certificate --region us-east-1 \
+#   --domain-name app-dev.yourdomain.com --validation-method DNS
+web_acm_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
