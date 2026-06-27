@@ -57,7 +57,7 @@ resource "aws_ecr_lifecycle_policy" "repos" {
 
 # ── Repository Policy — allow the deploy roles to pull/push ───────────────────
 resource "aws_ecr_repository_policy" "repos" {
-  for_each   = var.allowed_principal_arns != [] ? aws_ecr_repository.repos : {}
+  for_each   = length(var.allowed_principal_arns) > 0 ? aws_ecr_repository.repos : {}
   repository = each.value.name
 
   policy = jsonencode({
