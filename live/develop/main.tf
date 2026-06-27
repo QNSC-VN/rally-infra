@@ -96,6 +96,7 @@ module "rds" {
   multi_az                = false
   deletion_protection     = false   # disable in staging for easy teardown
   backup_retention_days   = 3
+  monitoring_interval     = 0       # disable Enhanced Monitoring in develop (saves CloudWatch cost)
 
   tags = { Environment = local.env }
 }
@@ -323,6 +324,20 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "attachments" {
       kms_master_key_id = local.kms_key_arn
     }
     bucket_key_enabled = true
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "attachments" {
+  bucket = aws_s3_bucket.attachments.id
+  cors_rule {
+    allowed_headers = ["Content-Type", "Content-Disposition"]
+    allowed_methods = ["PUT"]
+    allowed_origins = [
+      "https://${module.cdn.cloudfront_domain}",
+      "http://localhost:5173",
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
   }
 }
 

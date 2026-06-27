@@ -220,6 +220,7 @@ module "api" {
 
   cpu_target_pct    = 60   # tighter target in prod
   memory_target_pct = 70
+  log_retention_days = 90  # 90 days — SOC 2 minimum for prod logs
 
   tags = { Environment = local.env, Service = "api" }
 }
@@ -261,8 +262,9 @@ module "worker" {
     { name = "NODE_ENV", value = "production" },
   ]
 
-  sqs_queue_arns = values(module.messaging.queue_arns)
-  sns_topic_arns = values(module.messaging.topic_arns)
+  sqs_queue_arns    = values(module.messaging.queue_arns)
+  sns_topic_arns    = values(module.messaging.topic_arns)
+  log_retention_days = 90
 
   tags = { Environment = local.env, Service = "worker" }
 }

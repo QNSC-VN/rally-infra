@@ -95,8 +95,8 @@ resource "aws_db_instance" "this" {
   performance_insights_enabled          = true
   performance_insights_retention_period = 7    # free tier
 
-  monitoring_interval = 60
-  monitoring_role_arn = aws_iam_role.rds_enhanced.arn
+  monitoring_interval = var.monitoring_interval
+  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced.arn : null
 
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
@@ -114,7 +114,8 @@ resource "aws_db_instance" "this" {
 
 # ── Enhanced monitoring IAM role ──────────────────────────────────────────────
 resource "aws_iam_role" "rds_enhanced" {
-  name = "${var.identifier}-rds-enhanced-monitoring"
+  count = var.monitoring_interval > 0 ? 1 : 0
+  name  = "${var.identifier}-rds-enhanced-monitoring"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -129,6 +130,7 @@ resource "aws_iam_role" "rds_enhanced" {
 }
 
 resource "aws_iam_role_policy_attachment" "rds_enhanced" {
-  role       = aws_iam_role.rds_enhanced.name
+  count      = var.monitoring_interval > 0 ? 1 : 0
+  role       = aws_iam_role.rds_enhanced[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }

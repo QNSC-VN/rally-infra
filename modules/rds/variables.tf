@@ -12,4 +12,5 @@ variable "secret_recovery_days"    { type = number; default = 7 }
 variable "subnet_ids"              { type = list(string) }
 variable "security_group_id"       { type = string }
 variable "kms_key_arn"             { type = string; default = "" }
+variable "monitoring_interval"     { type = number; default = 60; description = "Enhanced monitoring interval seconds. 0 = disabled (develop). Saves CloudWatch cost." }
 variable "tags"                    { type = map(string); default = {} }
