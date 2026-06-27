@@ -12,3 +12,8 @@ acm_cert_arn = "arn:aws:acm:ap-southeast-1:123456789012:certificate/xxxxxxxx-xxx
 # Request via: aws acm request-certificate --region us-east-1 \
 #   --domain-name app-dev.yourdomain.com --validation-method DNS
 web_acm_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Microsoft Entra (Azure AD) SSO — optional; leave empty ("") to disable SSO
+# Find in Azure Portal → App registrations → your app → Overview
+entra_tenant_id = ""
+entra_client_id = ""

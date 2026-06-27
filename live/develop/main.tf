@@ -192,8 +192,34 @@ module "api" {
   ]
 
   environment_vars = [
-    { name = "NODE_ENV", value = "production" },
-    { name = "PORT",     value = "3000" },
+    { name = "NODE_ENV",               value = "production" },
+    { name = "PORT",                   value = "3000" },
+    { name = "AWS_REGION",             value = local.region },
+    # CORS — must match the CloudFront domain (and custom domain if configured)
+    { name = "CORS_ORIGINS",           value = "https://${module.cdn.cloudfront_domain}" },
+    # JWT config — defaults match app .env.example; override if needed
+    { name = "JWT_ISSUER",             value = "rally-api" },
+    { name = "JWT_AUDIENCE",           value = "rally-web" },
+    { name = "JWT_ACCESS_EXPIRY",      value = "15m" },
+    { name = "JWT_REFRESH_EXPIRY",     value = "30d" },
+    # Microsoft Entra SSO — set tenant/client IDs; leave empty to disable SSO
+    { name = "ENTRA_TENANT_ID",        value = var.entra_tenant_id },
+    { name = "ENTRA_CLIENT_ID",        value = var.entra_client_id },
+    # Messaging — SQS queue URLs injected at deploy time from module outputs
+    { name = "SQS_NOTIFICATIONS_URL",  value = module.messaging.queue_urls["notifications"] },
+    { name = "SQS_AUDIT_URL",          value = module.messaging.queue_urls["audit"] },
+    { name = "SQS_REPORTING_URL",      value = module.messaging.queue_urls["reporting"] },
+    { name = "SQS_SEARCH_URL",         value = module.messaging.queue_urls["search"] },
+    { name = "SNS_TOPIC_ARN",          value = module.messaging.topic_arns["domain-events"] },
+    # S3 attachments bucket
+    { name = "S3_ATTACHMENTS_BUCKET",  value = aws_s3_bucket.attachments.bucket },
+    # Email — SES in production
+    { name = "EMAIL_PROVIDER",         value = "ses" },
+    # Observability
+    { name = "LOG_LEVEL",              value = "info" },
+    { name = "LOG_PRETTY",             value = "false" },
+    { name = "OTEL_ENABLED",           value = "false" },
+    { name = "OTEL_SERVICE_NAME",      value = "rally-api" },
   ]
 
   sqs_queue_arns = values(module.messaging.queue_arns)
@@ -236,7 +262,19 @@ module "worker" {
   ]
 
   environment_vars = [
-    { name = "NODE_ENV", value = "production" },
+    { name = "NODE_ENV",              value = "production" },
+    { name = "AWS_REGION",            value = local.region },
+    { name = "SQS_NOTIFICATIONS_URL", value = module.messaging.queue_urls["notifications"] },
+    { name = "SQS_AUDIT_URL",         value = module.messaging.queue_urls["audit"] },
+    { name = "SQS_REPORTING_URL",     value = module.messaging.queue_urls["reporting"] },
+    { name = "SQS_SEARCH_URL",        value = module.messaging.queue_urls["search"] },
+    { name = "SNS_TOPIC_ARN",         value = module.messaging.topic_arns["domain-events"] },
+    { name = "S3_ATTACHMENTS_BUCKET", value = aws_s3_bucket.attachments.bucket },
+    { name = "EMAIL_PROVIDER",        value = "ses" },
+    { name = "LOG_LEVEL",             value = "info" },
+    { name = "LOG_PRETTY",            value = "false" },
+    { name = "OTEL_ENABLED",          value = "false" },
+    { name = "OTEL_SERVICE_NAME",     value = "rally-worker" },
   ]
 
   sqs_queue_arns = values(module.messaging.queue_arns)
@@ -245,7 +283,71 @@ module "worker" {
   tags = { Environment = local.env, Service = "worker" }
 }
 
+# ── S3 — Attachments bucket ───────────────────────────────────────────────────
+resource "aws_s3_bucket" "attachments" {
+  bucket = "${local.name}-attachments"
+  tags   = { Name = "${local.name}-attachments", Environment = local.env }
+}
+
+resource "aws_s3_bucket_public_access_block" "attachments" {
+  bucket                  = aws_s3_bucket.attachments.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "attachments" {
+  bucket = aws_s3_bucket.attachments.id
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+    bucket_key_enabled = true
+  }
+}
+
 # ── WAF ───────────────────────────────────────────────────────────────────────
+# ── ECS Task Definition — Migrator (one-shot, run manually or via CI) ─────────
+# This task runs `pnpm migration:run` then exits. It is never scheduled as a
+# service; deploy pipelines trigger it with: aws ecs run-task ...
+resource "aws_ecs_task_definition" "migrator" {
+  family                   = "${local.name}-migrator"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 512
+  memory                   = 1024
+  execution_role_arn       = module.api.execution_role_arn
+  task_role_arn            = module.api.task_role_arn
+
+  container_definitions = jsonencode([{
+    name      = "migrator"
+    image     = local.ecr_api_url
+    essential = true
+    command   = ["node", "dist/migrations/run.js"]   # override in Dockerfile if different
+
+    environment = [
+      { name = "NODE_ENV",    value = "production" },
+      { name = "AWS_REGION",  value = local.region },
+    ]
+
+    secrets = [
+      # The migrator uses the same DATABASE_URL (rallyadmin has full DDL rights)
+      { name = "DATABASE_URL", valueFrom = module.secrets.secret_arns["db-url"] },
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = "/ecs/${local.name}/migrator"
+        "awslogs-region"        = local.region
+        "awslogs-stream-prefix" = "migrator"
+        "awslogs-create-group"  = "true"
+      }
+    }
+  }])
+
+  tags = { Environment = local.env, Service = "migrator" }
+}
+
 module "waf" {
   source = "../../modules/waf"
 
