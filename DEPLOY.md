@@ -108,8 +108,8 @@ OpenTofu stores all infrastructure state in S3 and uses DynamoDB for state locki
 These resources must exist **before** running any `tofu init`.
 
 ```bash
-export STATE_BUCKET="qncs-tofu-state"
-export LOCK_TABLE="qncs-tofu-locks"
+export STATE_BUCKET="qnsc-tofu-state"
+export LOCK_TABLE="qnsc-tofu-locks"
 export REGION="ap-southeast-1"
 
 # ── S3 State Bucket ───────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ else
 fi
 ```
 
-> **Verify**: `aws s3 ls s3://qncs-tofu-state` — bucket exists. `aws dynamodb describe-table --table-name qncs-tofu-locks --region ap-southeast-1` — table exists.
+> **Verify**: `aws s3 ls s3://qnsc-tofu-state` — bucket exists. `aws dynamodb describe-table --table-name qnsc-tofu-locks --region ap-southeast-1` — table exists.
 
 ---
 

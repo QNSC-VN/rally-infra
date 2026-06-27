@@ -4,11 +4,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "qncs-tofu-state"
+    bucket         = "qnsc-tofu-state"
     key            = "rally/shared/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    dynamodb_table = "qncs-tofu-locks"
+    dynamodb_table = "qnsc-tofu-locks"
   }
 }
 
@@ -29,21 +29,21 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
-# ── Read shared platform outputs from qncs-infra bootstrap ───────────────────
+# ── Read shared platform outputs from qnsc-infra bootstrap ───────────────────
 # Gives us: kms_key_arn, artifacts_bucket_name, oidc_provider_arn
-# Dependency: qncs-infra/live/bootstrap must be applied before this stack.
+# Dependency: qnsc-infra/live/bootstrap must be applied before this stack.
 data "terraform_remote_state" "platform" {
   backend = "s3"
   config = {
-    bucket = "qncs-tofu-state"
+    bucket = "qnsc-tofu-state"
     key    = "platform/bootstrap/terraform.tfstate"
     region = "ap-southeast-1"
   }
 }
 
-# ── Discover the GitHub OIDC provider provisioned by qncs-infra bootstrap ────
+# ── Discover the GitHub OIDC provider provisioned by qnsc-infra bootstrap ────
 # One OIDC provider exists per AWS account (AWS hard limit).
-# qncs-infra/live/bootstrap owns creation; rally-infra must never create it.
+# qnsc-infra/live/bootstrap owns creation; rally-infra must never create it.
 data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
@@ -61,7 +61,7 @@ module "iam_oidc" {
   source = "../../modules/iam-oidc"
 
   github_org                 = local.github_org
-  create_oidc_provider       = false   # qncs-infra owns the provider — never recreate
+  create_oidc_provider       = false   # qnsc-infra owns the provider — never recreate
   existing_oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
 
   environments = {

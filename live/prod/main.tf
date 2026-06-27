@@ -4,11 +4,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "qncs-tofu-state"
+    bucket         = "qnsc-tofu-state"
     key            = "rally/prod/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    dynamodb_table = "qncs-tofu-locks"
+    dynamodb_table = "qnsc-tofu-locks"
   }
 }
 
@@ -29,7 +29,7 @@ data "aws_caller_identity" "current" {}
 data "terraform_remote_state" "shared" {
   backend = "s3"
   config = {
-    bucket = "qncs-tofu-state"
+    bucket = "qnsc-tofu-state"
     key    = "rally/shared/terraform.tfstate"
     region = "ap-southeast-1"
   }

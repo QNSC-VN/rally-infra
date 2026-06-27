@@ -4,11 +4,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "qncs-tofu-state"
+    bucket         = "qnsc-tofu-state"
     key            = "rally/develop/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    dynamodb_table = "qncs-tofu-locks"
+    dynamodb_table = "qnsc-tofu-locks"
   }
 }
 
@@ -26,12 +26,12 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 # ── Read shared layer outputs (ECR URLs, KMS ARN, artifacts bucket) ───────────
-# _shared owns ECR repos and re-exports platform-level outputs from qncs-infra.
+# _shared owns ECR repos and re-exports platform-level outputs from qnsc-infra.
 # Dependency: rally-infra/_shared must be applied before this environment stack.
 data "terraform_remote_state" "shared" {
   backend = "s3"
   config = {
-    bucket = "qncs-tofu-state"
+    bucket = "qnsc-tofu-state"
     key    = "rally/shared/terraform.tfstate"
     region = "ap-southeast-1"
   }
