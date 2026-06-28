@@ -67,13 +67,15 @@ module "iam_oidc" {
   environments = {
     develop = {
       allowed_subjects = [
-        "repo:${local.github_org}/rally-api:ref:refs/heads/main"
+        "repo:${local.github_org}/rally-api:ref:refs/heads/main",
+        "repo:${local.github_org}/rally-api:environment:develop"
       ]
     }
     production = {
       allowed_subjects = [
         "repo:${local.github_org}/rally-api:ref:refs/heads/main",
-        "repo:${local.github_org}/rally-api:ref:refs/tags/v*"
+        "repo:${local.github_org}/rally-api:ref:refs/tags/v*",
+        "repo:${local.github_org}/rally-api:environment:production"
       ]
     }
   }
@@ -89,6 +91,7 @@ locals {
     develop = {
       allowed_subjects = [
         "repo:${local.github_org}/rally-web:ref:refs/heads/main",
+        "repo:${local.github_org}/rally-web:environment:develop",
       ]
       s3_bucket = "rally-web-develop"
     }
@@ -96,6 +99,7 @@ locals {
       allowed_subjects = [
         "repo:${local.github_org}/rally-web:ref:refs/heads/main",
         "repo:${local.github_org}/rally-web:ref:refs/tags/v*",
+        "repo:${local.github_org}/rally-web:environment:production",
       ]
       s3_bucket = "rally-web-prod"
     }
