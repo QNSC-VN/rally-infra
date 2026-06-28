@@ -41,12 +41,6 @@ data "terraform_remote_state" "platform" {
   }
 }
 
-# ── Discover the GitHub OIDC provider provisioned by qnsc-infra bootstrap ────
-# One OIDC provider exists per AWS account (AWS hard limit).
-# qnsc-infra/live/bootstrap owns creation; rally-infra must never create it.
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-}
 
 # ── ECR Repositories ──────────────────────────────────────────────────────────
 module "ecr" {
@@ -60,11 +54,11 @@ module "ecr" {
 
 # ── GitHub OIDC ───────────────────────────────────────────────────────────────
 module "iam_oidc" {
-  source = "../../modules/iam-oidc"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/iam-oidc?ref=iam-oidc-v1.0.0"
 
-  github_org                 = local.github_org
-  create_oidc_provider       = false   # qnsc-infra owns the provider — never recreate
-  existing_oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
+  product           = "rally"
+  github_org        = local.github_org
+  oidc_provider_arn = data.terraform_remote_state.platform.outputs.oidc_provider_arn
 
   environments = {
     develop = {
@@ -82,7 +76,11 @@ module "iam_oidc" {
     }
   }
 
-  tags = { Layer = "shared" }
+  app_repo_names         = ["rally-api"]
+  infra_repo_name        = "rally-infra"
+  ecr_repository_pattern = "rally-*"
+  ecs_passrole_pattern   = "rally-ecs-*"
+  tags                   = { Layer = "shared" }
 }
 
 # ── GitHub OIDC — rally-web deploy roles ─────────────────────────────────────
