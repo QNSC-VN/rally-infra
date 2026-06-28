@@ -108,7 +108,7 @@ module "rds" {
   backup_retention_days   = 3
   monitoring_interval     = 0       # disable Enhanced Monitoring in develop (saves CloudWatch cost)
 
-  tags = { Environment = local.env }
+  tags = { Environment = local.env, AutoStop = "true" }
 }
 
 # ── ElastiCache Valkey ────────────────────────────────────────────────────────
@@ -273,7 +273,7 @@ module "api" {
   sqs_queue_arns = values(module.messaging.queue_arns)
   sns_topic_arns = values(module.messaging.topic_arns)
 
-  tags = { Environment = local.env, Service = "api" }
+  tags = { Environment = local.env, Service = "api", AutoStop = "true" }
 }
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ module "worker" {
   sqs_queue_arns = values(module.messaging.queue_arns)
   sns_topic_arns = values(module.messaging.topic_arns)
 
-  tags = { Environment = local.env, Service = "worker" }
+  tags = { Environment = local.env, Service = "worker", AutoStop = "true" }
 }
 
 # ── S3 — Attachments bucket ───────────────────────────────────────────────────
@@ -448,3 +448,12 @@ module "cdn" {
 
   tags = { Environment = local.env, Service = "web" }
 }
+
+# ── Dev cost saver: stop RDS + scale ECS to 0 off-hours ───────────────────────
+# Acts on resources tagged AutoStop=true (rds, api, worker above).
+module "dev_scheduler" {
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/dev-scheduler?ref=dev-scheduler-v1.0.0"
+  name   = local.name
+  tags   = { Environment = local.env }
+}
+
