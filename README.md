@@ -1,14 +1,15 @@
 # rally-infra
 
-OpenTofu infrastructure for the [Rally](../rally-api) project deployed on AWS (ap-southeast-1).
+OpenTofu infrastructure for the [Rally](https://github.com/QNSC-VN/rally-api) platform —
+QNSC's internal Agile work-management system — deployed on AWS (ap-southeast-1).
 
 ## Architecture
 
 ```
 live/
   _shared/      — ECR repositories + GitHub OIDC roles (once per AWS account)
-  staging/      — Full stack: VPC, RDS, ElastiCache, ECS, ALB, WAF
-  prod/         — Same as staging, Multi-AZ, larger instances
+  develop/      — Full stack: VPC, RDS, ElastiCache, ECS, ALB, WAF
+  prod/         — Same as develop, Multi-AZ, larger instances
 
 modules/
   network/      — VPC, subnets, IGW, NAT, security groups, VPC endpoints
@@ -47,11 +48,11 @@ aws dynamodb create-table \
 cd live/_shared
 tofu init && tofu apply
 
-# 3. Deploy staging
-cd live/staging
+# 3. Deploy develop
+cd live/develop
 tofu init && tofu apply -var="acm_cert_arn=arn:aws:acm:..."
 
-# 4. Deploy production (after staging is confirmed healthy)
+# 4. Deploy production (after develop is confirmed healthy)
 cd live/prod
 tofu init && tofu apply -var="acm_cert_arn=arn:aws:acm:..."
 ```
@@ -61,14 +62,15 @@ tofu init && tofu apply -var="acm_cert_arn=arn:aws:acm:..."
 | Workflow | Trigger | Action |
 |----------|---------|--------|
 | `plan.yml` | PR to `main` | `tofu plan` per changed workspace, posts output as PR comment |
-| `apply.yml` | Push to `main` | Applies `_shared` → `staging` → `production` (prod requires approval) |
+| `apply.yml` | Push to `main` | Applies `_shared` → `develop` → `production` (prod requires approval) |
 
 ### Required Secrets (GitHub repo settings)
 
 | Secret | Description |
 |--------|-------------|
 | `AWS_ACCOUNT_ID` | AWS account number |
-| `ACM_CERT_ARN_STAGING` | ACM cert ARN for staging ALB |
+| `ACM_CERT_ARN_DEVELOP` | ACM cert ARN for the develop ALB (ap-southeast-1) |
+| `WEB_ACM_CERT_ARN_DEVELOP` | ACM cert ARN for the develop CloudFront distribution (us-east-1) |
 | `ACM_CERT_ARN_PROD` | ACM cert ARN for production ALB |
 
 ### Required IAM Roles (created by `live/_shared`)
@@ -78,7 +80,7 @@ tofu init && tofu apply -var="acm_cert_arn=arn:aws:acm:..."
 | `rally-github-infra-plan` | Plan workflow — read-only |
 | `rally-github-infra-apply` | Apply workflow — write |
 | `rally-github-ecr-push` | rally-api CI — push images |
-| `rally-github-deploy-staging` | rally-api CD — deploy to staging |
+| `rally-github-deploy-develop` | rally-api CD — deploy to develop |
 | `rally-github-deploy-production` | rally-api CD — deploy to production |
 
 > **Note:** `rally-github-infra-plan` and `rally-github-infra-apply` must be created manually
@@ -91,7 +93,7 @@ Secrets are created as empty placeholders. Fill them in the AWS Console or via C
 
 ```bash
 aws secretsmanager put-secret-value \
-  --secret-id rally/staging/db-url \
+  --secret-id rally/develop/db-url \
   --secret-string "postgresql://user:pass@host:5432/rally"
 ```
 

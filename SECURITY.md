@@ -11,7 +11,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Please report security issues by emailing: **security@rally-app.io**
+Please report security issues by emailing: **security@qnsc.vn**
 
 Include:
 - Description of the vulnerability
