@@ -293,7 +293,7 @@ module "waf" {
 # ── CDN (S3 + CloudFront) — rally-web SPA ─────────────────────────────────────
 # PriceClass_All in prod — full global PoP coverage for enterprise users.
 module "cdn" {
-  source = "../../modules/cdn"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cdn?ref=cdn-v1.0.0"
 
   name         = "rally-web-prod"
   acm_cert_arn = var.web_acm_cert_arn
