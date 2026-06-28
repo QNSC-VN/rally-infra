@@ -54,11 +54,13 @@ locals {
 
 # ── Networking ────────────────────────────────────────────────────────────────
 module "network" {
-  source = "../../modules/network"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/network?ref=network-v1.0.0"
 
   name   = local.name
   region = local.region
   azs    = local.azs
+
+  enable_interface_endpoints = false # dev: NAT already covers egress — save ~$22/mo
 
   vpc_cidr             = "10.10.0.0/16"
   public_subnet_cidrs  = ["10.10.0.0/24", "10.10.1.0/24", "10.10.2.0/24"]
