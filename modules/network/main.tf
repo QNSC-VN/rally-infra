@@ -105,7 +105,7 @@ resource "aws_route_table_association" "data" {
 # ── Security Groups ───────────────────────────────────────────────────────────
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb"
-  description = "ALB — allows HTTPS from everywhere"
+  description = "ALB - allows HTTPS"
   vpc_id      = aws_vpc.this.id
 
   dynamic "ingress" {
@@ -137,7 +137,7 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "app" {
   name        = "${var.name}-app"
-  description = "ECS app tasks — allows traffic from ALB"
+  description = "ECS app tasks - allows traffic from ALB"
   vpc_id      = aws_vpc.this.id
 
   ingress {
@@ -145,6 +145,13 @@ resource "aws_security_group" "app" {
     to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
+  }
+  # Allow HTTPS to VPC Interface Endpoints (Secrets Manager, ECR) — endpoint uses this same SG
+  ingress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    self      = true
   }
   egress {
     from_port   = 0
@@ -157,7 +164,7 @@ resource "aws_security_group" "app" {
 
 resource "aws_security_group" "rds" {
   name        = "${var.name}-rds"
-  description = "RDS PostgreSQL — allows access from app tasks only"
+  description = "RDS PostgreSQL - allows access from app tasks only"
   vpc_id      = aws_vpc.this.id
 
   ingress {
@@ -171,7 +178,7 @@ resource "aws_security_group" "rds" {
 
 resource "aws_security_group" "cache" {
   name        = "${var.name}-cache"
-  description = "ElastiCache Valkey — allows access from app tasks only"
+  description = "ElastiCache Valkey - allows access from app tasks only"
   vpc_id      = aws_vpc.this.id
 
   ingress {
