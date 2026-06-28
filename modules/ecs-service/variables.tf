@@ -84,6 +84,10 @@ variable "secret_arns" {
   type = list(string)
   default = []
 }
+variable "kms_key_arn" {
+  type    = string
+  default = ""
+}
 variable "sqs_queue_arns" {
   type = list(string)
   default = []

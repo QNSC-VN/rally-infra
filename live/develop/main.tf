@@ -202,6 +202,7 @@ module "api" {
   health_check_path = "/v1/healthz"
 
   secret_arns = values(module.secrets.secret_arns)
+  kms_key_arn = local.kms_key_arn
   secrets = [
     { name = "DATABASE_URL",    secret_arn = module.secrets.secret_arns["db-url"] },
     { name = "REDIS_URL",       secret_arn = module.secrets.secret_arns["redis-url"] },
@@ -273,6 +274,7 @@ module "worker" {
   container_port       = 3001
 
   secret_arns = values(module.secrets.secret_arns)
+  kms_key_arn = local.kms_key_arn
   secrets = [
     { name = "DATABASE_URL",    secret_arn = module.secrets.secret_arns["db-url"] },
     { name = "REDIS_URL",       secret_arn = module.secrets.secret_arns["redis-url"] },
@@ -405,7 +407,7 @@ module "cdn" {
 
   name        = "rally-web-develop"
   acm_cert_arn = var.web_acm_cert_arn
-  aliases     = []   # set to ["app-dev.rally.example.com"] once DNS is configured
+  aliases     = ["rally-dev.qnsc.vn"]
   price_class = "PriceClass_100"   # develop: US/EU PoPs only — cheaper than PriceClass_200
 
   tags = { Environment = local.env, Service = "web" }

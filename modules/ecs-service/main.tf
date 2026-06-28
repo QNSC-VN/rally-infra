@@ -35,7 +35,7 @@ resource "aws_iam_role_policy_attachment" "execution_base" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Allow execution role to pull secrets from Secrets Manager
+# Allow execution role to pull secrets from Secrets Manager (+ KMS decrypt if CMK used)
 resource "aws_iam_role_policy" "execution_secrets" {
   count = length(var.secret_arns) > 0 ? 1 : 0
   name  = "rally-ecs-exec-${var.service_name}-secrets"
@@ -43,11 +43,18 @@ resource "aws_iam_role_policy" "execution_secrets" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
-      Resource = var.secret_arns
-    }]
+    Statement = concat(
+      [{
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = var.secret_arns
+      }],
+      var.kms_key_arn != "" ? [{
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = [var.kms_key_arn]
+      }] : []
+    )
   })
 }
 
