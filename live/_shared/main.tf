@@ -50,10 +50,12 @@ data "aws_iam_openid_connect_provider" "github" {
 
 # ── ECR Repositories ──────────────────────────────────────────────────────────
 module "ecr" {
-  source = "../../modules/ecr"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecr?ref=ecr-v1.0.0"
 
-  repository_names = ["rally-api", "rally-worker", "rally-migrator"]
-  tags             = { Layer = "shared" }
+  repository_names     = ["rally-api", "rally-worker", "rally-migrator"]
+  image_tag_mutability = "MUTABLE" # allows re-tagging :latest
+  kms_key_arn          = data.terraform_remote_state.platform.outputs.kms_key_arn
+  tags                 = { Layer = "shared" }
 }
 
 # ── GitHub OIDC ───────────────────────────────────────────────────────────────
