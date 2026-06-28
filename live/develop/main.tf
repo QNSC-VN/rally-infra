@@ -216,8 +216,8 @@ module "api" {
     { name = "NODE_ENV",               value = "production" },
     { name = "PORT",                   value = "3000" },
     { name = "AWS_REGION",             value = local.region },
-    # CORS — must match the CloudFront domain (and custom domain if configured)
-    { name = "CORS_ORIGINS",           value = "https://${module.cdn.cloudfront_domain}" },
+    { name = "CORS_ORIGINS",           value = "https://rally-dev.qnsc.vn,https://${module.cdn.cloudfront_domain}" },
+    { name = "APP_BASE_URL",           value = "https://rally-dev.qnsc.vn" },
     # JWT config — defaults match app .env.example; override if needed
     { name = "JWT_ISSUER",             value = "rally-api" },
     { name = "JWT_AUDIENCE",           value = "rally-web" },
@@ -339,6 +339,7 @@ resource "aws_s3_bucket_cors_configuration" "attachments" {
     allowed_headers = ["Content-Type", "Content-Disposition"]
     allowed_methods = ["PUT"]
     allowed_origins = [
+      "https://rally-dev.qnsc.vn",
       "https://${module.cdn.cloudfront_domain}",
       "http://localhost:5173",
     ]
