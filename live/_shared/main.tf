@@ -158,7 +158,7 @@ resource "aws_iam_role_policy" "web_deploy" {
       {
         Sid      = "CloudFrontInvalidate"
         Effect   = "Allow"
-        Action   = ["cloudfront:CreateInvalidation"]
+        Action   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
         Resource = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/*"
       },
     ]
