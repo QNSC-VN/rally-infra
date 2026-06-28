@@ -81,11 +81,20 @@ module "network" {
 
 # ── Secrets ───────────────────────────────────────────────────────────────────
 module "secrets" {
-  source               = "../../modules/secrets"
+  source               = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/secrets?ref=secrets-v1.0.0"
   prefix               = "rally/${local.env}"
   kms_key_arn          = local.kms_key_arn
-  recovery_window_days = 30   # longer recovery in production
-  tags                 = { Environment = local.env }
+  recovery_window_days = 30 # longer recovery in production
+
+  secret_names = {
+    "db-url"      = "PostgreSQL connection URL for the app"
+    "jwt-private" = "Ed25519 private key (PEM, base64-encoded)"
+    "jwt-public"  = "Ed25519 public key (PEM, base64-encoded)"
+    "csrf-secret" = "CSRF token signing secret"
+    "redis-url"   = "Redis/Valkey connection URL"
+  }
+
+  tags = { Environment = local.env }
 }
 
 # ── RDS PostgreSQL 17 (Multi-AZ) ─────────────────────────────────────────────
