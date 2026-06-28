@@ -127,9 +127,27 @@ module "cache" {
 
 # ── Messaging (SQS + SNS) ─────────────────────────────────────────────────────
 module "messaging" {
-  source = "../../modules/messaging"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
   prefix = local.name
-  tags   = { Environment = local.env }
+
+  queues = {
+    notifications = {}
+    audit         = { visibility_timeout = 60 }
+    reporting     = { visibility_timeout = 300 }
+    search        = {}
+  }
+
+  topics = ["domain-events"]
+
+  subscriptions = [
+    {
+      topic         = "domain-events"
+      queue         = "notifications"
+      filter_policy = jsonencode({ eventType = ["notification.created", "notification.updated"] })
+    }
+  ]
+
+  tags = { Environment = local.env }
 }
 
 # ── ALB ───────────────────────────────────────────────────────────────────────
