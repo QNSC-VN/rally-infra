@@ -96,7 +96,7 @@ resource "aws_db_instance" "this" {
   performance_insights_retention_period = 7    # free tier
 
   monitoring_interval = var.monitoring_interval
-  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced.arn : null
+  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced[0].arn : null
 
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
