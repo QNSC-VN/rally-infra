@@ -344,6 +344,12 @@ resource "aws_s3_bucket_cors_configuration" "attachments" {
 }
 
 # ── WAF ───────────────────────────────────────────────────────────────────────
+resource "aws_cloudwatch_log_group" "migrator" {
+  name              = "/ecs/${local.name}/migrator"
+  retention_in_days = 30
+  tags              = { Environment = local.env, Service = "migrator" }
+}
+
 # ── ECS Task Definition — Migrator (one-shot, run manually or via CI) ─────────
 # This task runs `pnpm migration:run` then exits. It is never scheduled as a
 # service; deploy pipelines trigger it with: aws ecs run-task ...
@@ -375,10 +381,9 @@ resource "aws_ecs_task_definition" "migrator" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"         = "/ecs/${local.name}/migrator"
+        "awslogs-group"         = aws_cloudwatch_log_group.migrator.name
         "awslogs-region"        = local.region
         "awslogs-stream-prefix" = "migrator"
-        "awslogs-create-group"  = "true"
       }
     }
   }])
