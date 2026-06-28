@@ -121,43 +121,47 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([
-    {
-      name      = var.service_name
-      image     = var.image_uri
-      essential = true
+    merge(
+      {
+        name      = var.service_name
+        image     = var.image_uri
+        essential = true
 
-      portMappings = [{
-        containerPort = var.container_port
-        protocol      = "tcp"
-      }]
+        portMappings = [{
+          containerPort = var.container_port
+          protocol      = "tcp"
+        }]
 
-      environment = var.environment_vars
+        environment = var.environment_vars
 
-      secrets = [for s in var.secrets : {
-        name      = s.name
-        valueFrom = s.secret_arn
-      }]
+        secrets = [for s in var.secrets : {
+          name      = s.name
+          valueFrom = s.secret_arn
+        }]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.this.name
-          awslogs-region        = data.aws_region.current.name
-          awslogs-stream-prefix = "ecs"
+        logConfiguration = {
+          logDriver = "awslogs"
+          options = {
+            awslogs-group         = aws_cloudwatch_log_group.this.name
+            awslogs-region        = data.aws_region.current.name
+            awslogs-stream-prefix = "ecs"
+          }
         }
-      }
 
-      healthCheck = {
-        command     = ["CMD-SHELL", var.health_check_command]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
-
-      readonlyRootFilesystem = false
-      user                   = "1001:1001"
-    }
+        readonlyRootFilesystem = false
+        user                   = "1001:1001"
+      },
+      # healthCheck is optional — omit for services with no HTTP listener (e.g. background workers)
+      var.health_check_command != "" ? {
+        healthCheck = {
+          command     = ["CMD-SHELL", var.health_check_command]
+          interval    = 30
+          timeout     = 5
+          retries     = 3
+          startPeriod = 60
+        }
+      } : {}
+    )
   ])
 
   tags = var.tags
@@ -246,7 +250,9 @@ resource "aws_ecs_service" "this" {
   tags = merge(var.tags, { Name = var.service_name })
 
   lifecycle {
-    ignore_changes = [task_definition]   # task def updated by deploy workflow
+    # task_definition: updated by deploy workflow (CI registers new revision)
+    # desired_count: managed by Application Auto Scaling — Terraform must not reset it
+    ignore_changes = [task_definition, desired_count]
   }
 }
 

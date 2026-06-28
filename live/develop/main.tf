@@ -271,7 +271,8 @@ module "worker" {
 
   attach_alb = false
 
-  health_check_command = "curl -f http://localhost:3001/v1/healthz || exit 1"
+  # Worker has no HTTP listener — check the node process is alive instead
+  health_check_command = "pgrep -x node || exit 1"
   container_port       = 3001
 
   secret_arns = values(module.secrets.secret_arns)

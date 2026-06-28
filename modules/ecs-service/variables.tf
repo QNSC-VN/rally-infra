@@ -68,8 +68,9 @@ variable "health_check_path" {
   default = "/v1/healthz"
 }
 variable "health_check_command" {
-  type = string
-  default = "curl -f http://localhost:3000/v1/healthz || exit 1"
+  type    = string
+  # wget ships with Alpine; curl does not. Empty string = no healthCheck (for workers).
+  default = "wget -qO- http://localhost:3000/v1/healthz || exit 1"
 }
 
 variable "environment_vars"  {
