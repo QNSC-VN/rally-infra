@@ -282,6 +282,8 @@ module "worker" {
     { name = "REDIS_URL",       secret_arn = module.secrets.secret_arns["redis-url"] },
     { name = "JWT_PRIVATE_KEY", secret_arn = module.secrets.secret_arns["jwt-private"] },
     { name = "JWT_PUBLIC_KEY",  secret_arn = module.secrets.secret_arns["jwt-public"] },
+    # Shared schema requires CSRF_SECRET even though the worker never uses it as middleware
+    { name = "CSRF_SECRET",     secret_arn = module.secrets.secret_arns["csrf-secret"] },
   ]
 
   environment_vars = [
