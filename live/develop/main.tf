@@ -47,8 +47,9 @@ locals {
 
   # ECR URLs derived from current AWS account — no hardcoded placeholder
   ecr_base       = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.region}.amazonaws.com"
-  ecr_api_url    = "${local.ecr_base}/rally-api:latest"
-  ecr_worker_url = "${local.ecr_base}/rally-worker:latest"
+  ecr_api_url      = "${local.ecr_base}/rally-api:latest"
+  ecr_worker_url   = "${local.ecr_base}/rally-worker:latest"
+  ecr_migrator_url = "${local.ecr_base}/rally-migrator:latest"
 }
 
 # ── Networking ────────────────────────────────────────────────────────────────
@@ -364,7 +365,7 @@ resource "aws_ecs_task_definition" "migrator" {
 
   container_definitions = jsonencode([{
     name      = "migrator"
-    image     = local.ecr_api_url
+    image     = local.ecr_migrator_url
     essential = true
 
     environment = [
