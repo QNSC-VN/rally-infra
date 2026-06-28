@@ -180,7 +180,7 @@ resource "aws_lb_listener" "http_redirect" {
 
 # ── ECS Cluster ───────────────────────────────────────────────────────────────
 module "ecs_cluster" {
-  source = "../../modules/ecs-cluster"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v1.0.0"
   name   = local.name
   tags   = { Environment = local.env }
 }
