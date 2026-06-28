@@ -366,7 +366,6 @@ resource "aws_ecs_task_definition" "migrator" {
     name      = "migrator"
     image     = local.ecr_api_url
     essential = true
-    command   = ["node", "dist/migrations/run.js"]   # override in Dockerfile if different
 
     environment = [
       { name = "NODE_ENV",    value = "production" },
