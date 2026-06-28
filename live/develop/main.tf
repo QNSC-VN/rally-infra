@@ -412,7 +412,7 @@ module "waf" {
 #   2. Pass its ARN as web_acm_cert_arn in your tfvars
 #   3. After apply: set S3_BUCKET + CLOUDFRONT_ID as GitHub env vars for rally-web
 module "cdn" {
-  source = "../../modules/cdn"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cdn?ref=cdn-v1.0.0"
 
   name        = "rally-web-develop"
   acm_cert_arn = var.web_acm_cert_arn
