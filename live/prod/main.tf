@@ -118,7 +118,7 @@ module "rds" {
 
 # ── ElastiCache Valkey ────────────────────────────────────────────────────────
 module "cache" {
-  source = "../../modules/cache"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cache?ref=cache-v1.0.0"
 
   name              = local.name
   subnet_ids        = module.network.data_subnet_ids

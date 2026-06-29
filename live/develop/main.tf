@@ -115,14 +115,13 @@ module "rds" {
 
 # ── ElastiCache Valkey ────────────────────────────────────────────────────────
 module "cache" {
-  source = "../../modules/cache"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cache?ref=cache-v1.0.0"
 
   name              = local.name
   subnet_ids        = module.network.data_subnet_ids
   security_group_id = module.network.sg_cache_id
 
-  max_data_storage_gb = 2
-  max_ecpu_per_second = 2000
+  mode = "node" # dev: single small node (~$11/mo) vs serverless ~$90 floor
 
   tags = { Environment = local.env }
 }
