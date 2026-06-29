@@ -95,7 +95,7 @@ module "secrets" {
 
 # ── RDS PostgreSQL 17 ─────────────────────────────────────────────────────────
 module "rds" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v1.0.0"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v1.0.1"
 
   identifier        = local.name
   subnet_ids        = module.network.data_subnet_ids
@@ -444,10 +444,13 @@ module "waf" {
 module "cdn" {
   source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cdn?ref=cdn-v1.0.0"
 
-  name        = "rally-web-develop"
+  name         = "rally-web-develop"
   acm_cert_arn = var.web_acm_cert_arn
-  aliases     = ["rally-dev.qnsc.vn"]
-  price_class = "PriceClass_100"   # develop: US/EU PoPs only — cheaper than PriceClass_200
+  # Custom alias deferred: the CNAME was held by the just-deleted old distribution
+  # (CloudFront alias release lags) + no DNS points here yet in dev. Restore
+  # ["rally-dev.qnsc.vn"] once DNS is configured and the alias lock clears.
+  aliases     = []
+  price_class = "PriceClass_100" # develop: US/EU PoPs only — cheaper than PriceClass_200
 
   tags = { Environment = local.env, Service = "web" }
 }
