@@ -403,8 +403,9 @@ resource "aws_ecs_task_definition" "migrator" {
     essential = true
 
     environment = [
-      { name = "NODE_ENV",    value = "production" },
-      { name = "AWS_REGION",  value = local.region },
+      { name = "NODE_ENV",        value = "production" },
+      { name = "AWS_REGION",      value = local.region },
+      { name = "SEED_ON_DEPLOY",  value = "true" },
     ]
 
     secrets = [
