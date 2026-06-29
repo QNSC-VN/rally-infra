@@ -117,7 +117,7 @@ resource "aws_iam_role" "web_deploy" {
     Statement = [
       {
         Effect    = "Allow"
-        Principal = { Federated = module.iam_oidc.oidc_provider_arn }
+        Principal = { Federated = data.terraform_remote_state.platform.outputs.oidc_provider_arn }
         Action    = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
