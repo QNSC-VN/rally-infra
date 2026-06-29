@@ -79,7 +79,7 @@ module "iam_oidc" {
   app_repo_names         = ["rally-api"]
   infra_repo_name        = "rally-infra"
   ecr_repository_pattern = "rally-*"
-  ecs_passrole_pattern   = "rally-ecs-*"
+  ecs_passrole_pattern   = "rally-*" # shared ecs-service names roles <cluster>-<service>-task
   tags                   = { Layer = "shared" }
 }
 
