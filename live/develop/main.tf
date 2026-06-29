@@ -450,7 +450,7 @@ module "cdn" {
   # Custom alias deferred: the CNAME was held by the just-deleted old distribution
   # (CloudFront alias release lags) + no DNS points here yet in dev. Restore
   # ["rally-dev.qnsc.vn"] once DNS is configured and the alias lock clears.
-  aliases     = []
+  aliases     = ["rally-dev.qnsc.vn"]
   price_class = "PriceClass_100" # develop: US/EU PoPs only — cheaper than PriceClass_200
 
   tags = { Environment = local.env, Service = "web" }
