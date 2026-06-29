@@ -99,7 +99,7 @@ module "secrets" {
 
 # ── RDS PostgreSQL 17 (Multi-AZ) ─────────────────────────────────────────────
 module "rds" {
-  source = "../../modules/rds"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v1.0.0"
 
   identifier        = local.name
   subnet_ids        = module.network.data_subnet_ids
