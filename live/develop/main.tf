@@ -427,7 +427,7 @@ resource "aws_ecs_task_definition" "migrator" {
 }
 
 module "waf" {
-  source = "../../modules/waf"
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/waf?ref=waf-v1.0.0"
 
   name                = local.name
   enabled             = false   # WAF skipped in develop — saves $5+/month per WebACL; enabled in prod
