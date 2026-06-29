@@ -98,3 +98,38 @@ aws secretsmanager put-secret-value \
 ```
 
 After the RDS module applies, the DB endpoint is available in `tofu output rds_endpoint`.
+
+## Shared modules
+
+This repo composes versioned modules from
+[`qnsc-tf-modules`](https://github.com/QNSC-VN/qnsc-tf-modules) (network, rds,
+ecs-service, cache, waf, …) — there are no local `modules/`. Each is pinned by a
+per-module tag, e.g.:
+
+```hcl
+module "network" {
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/network?ref=network-v1.0.0"
+  # ...
+}
+```
+
+Bump a module deliberately by changing its `?ref=<module>-vX.Y.Z`.
+
+## Dependency updates
+
+Two tools keep dependencies current — each handles what it's best at:
+
+| Tool | Updates | Config |
+| :--- | :------ | :----- |
+| **Renovate** | Shared Terraform module pins (`?ref=<module>-vX.Y.Z`) | [`renovate.json`](./renovate.json) |
+| **Dependabot** | GitHub Actions pins (`uses: …@v1`) and any other ecosystems | `.github/dependabot.yml` |
+
+**Why two tools:** the shared modules use *per-module prefixed* tags
+(`cdn-v1.0.0`, `network-v1.0.0`). Dependabot's Terraform updater only handles
+plain SemVer git refs, so it can't track these — Renovate can. The Renovate
+config uses `regex` versioning with a `compatibility` capture group so each
+module only updates within its own prefix (`cdn-*` never bumps to `network-*`).
+
+> ⚠️ Renovate is a GitHub App — it must be **installed on the `QNSC-VN` org**
+> for `renovate.json` to take effect. Once installed it opens a Dependency
+> Dashboard issue and weekly update PRs.
